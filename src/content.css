@@ -1,0 +1,13 @@
+.br-btn {
+  font: 500 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  padding: 3px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--button-default-borderColor-rest, var(--borderColor-default, #d0d7de));
+  background: var(--button-default-bgColor-rest, var(--bgColor-muted, #f6f8fa));
+  color: var(--button-default-fgColor-rest, var(--fgColor-default, #1f2328));
+  cursor: pointer;
+}
+.br-btn:hover { background: var(--button-default-bgColor-hover, var(--bgColor-neutral-muted, #eaeef2)); }
+.br-btn:focus-visible { outline: 2px solid var(--focus-outlineColor, #0969da); outline-offset: 2px; }
+.br-inline { margin: 8px 0; }
+.br-floating { position: fixed; right: 16px; bottom: 16px; z-index: 100; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
