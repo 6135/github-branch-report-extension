@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Branches</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="stylesheet" href="report.css">
+</head>
+<body class="report">
+  <header class="top">
+    <div class="top-title">
+      <h1 id="title">Branches</h1>
+      <p id="meta" class="hint"></p>
+    </div>
+    <div class="row">
+      <button id="reload" type="button" hidden>Reload</button>
+      <a href="#" id="settingsLink">Settings</a>
+    </div>
+  </header>
+
+  <!-- Bad URL parameters. -->
+  <section id="badView" class="panel" hidden>
+    <h2>Cannot open the report</h2>
+    <p>This page needs a host, an owner and a repository. Open it with the <strong>Branch report</strong> button on the Branches page of a repository.</p>
+  </section>
+
+  <!-- No session for the host. -->
+  <section id="loginView" class="panel" hidden>
+    <h2 id="loginTitle">Log in</h2>
+    <p id="loginText"></p>
+    <div class="row">
+      <button id="loginBtn" type="button" class="primary">Log in</button>
+      <a href="#" id="loginSettings">Open the settings</a>
+    </div>
+    <p class="hint">After you log in, come back to this tab. The report loads automatically.</p>
+  </section>
+
+  <!-- Progress while the report loads. -->
+  <section id="loadView" class="loading" hidden>
+    <p id="progressText" role="status" aria-live="polite"></p>
+    <progress id="progressBar" aria-label="Report progress"></progress>
+  </section>
+
+  <!-- Load error. -->
+  <section id="errorView" class="panel error-panel" hidden role="alert">
+    <h2>The report did not load</h2>
+    <p id="errorText"></p>
+    <div class="row" id="errorActions"></div>
+  </section>
+
+  <main id="reportView" hidden>
+    <div id="warnings" class="warn" hidden>
+      <strong>Warnings</strong>
+      <ul id="warningList"></ul>
+    </div>
+    <p id="noPush" class="warn" hidden>You do not have write access to this repository. Delete and restore are off.</p>
+
+    <div id="chips" class="chips" role="group" aria-label="Filter by status"></div>
+
+    <div class="row filters">
+      <label class="field grow">Search
+        <input id="search" type="search" placeholder="Branch name or person" spellcheck="false" autocomplete="off">
+      </label>
+      <label class="field">Probable creator
+        <select id="creator"></select>
+      </label>
+    </div>
+
+    <div class="row toolbar">
+      <button id="deleteBtn" type="button" class="danger-solid" disabled>Delete selected (0)</button>
+      <span id="selInfo" class="hint"></span>
+      <span class="spacer"></span>
+      <button id="exportCsv" type="button">Export CSV</button>
+      <button id="exportJson" type="button">Export JSON</button>
+      <label class="inline nowrap"><input id="exportVisible" type="checkbox"> Visible rows only</label>
+      <button id="restoreBtn" type="button">Restore from export…</button>
+      <input id="restoreFile" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+    </div>
+    <p id="toolStatus" class="status" role="status" aria-live="polite"></p>
+
+    <div class="table-wrap">
+      <table id="table">
+        <caption class="sr-only">Branches. Select a column header to sort.</caption>
+        <thead>
+          <tr>
+            <th class="c-check" scope="col"><input id="selectAll" type="checkbox" aria-label="Select all visible branches that can be deleted"></th>
+            <th scope="col" data-sort="name"><button type="button">Branch</button></th>
+            <th scope="col" data-sort="date"><button type="button">Last commit</button></th>
+            <th scope="col" data-sort="committer"><button type="button">Last committer</button></th>
+            <th scope="col" data-sort="creator"><button type="button">Probable creator</button></th>
+            <th scope="col" data-sort="pr"><button type="button">PR</button></th>
+            <th scope="col" data-sort="ahead" class="num"><button type="button">Ahead / behind</button></th>
+            <th scope="col" data-sort="age"><button type="button">Stale</button></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p id="emptyMsg" class="hint" hidden>No branches match the filters.</p>
+  </main>
+
+  <!-- Delete: dry run, backup, type to confirm, run. -->
+  <dialog id="delDialog" aria-labelledby="delTitle">
+    <h2 id="delTitle">Delete branches</h2>
+    <section id="delReview">
+      <p class="hint">Dry run. Nothing is deleted yet.</p>
+      <div id="delGroups"></div>
+      <label id="openWrap" class="inline check-line" hidden>
+        <input id="includeOpen" type="checkbox">
+        <span id="openLabel"></span>
+      </label>
+      <div class="warn">
+        <p>Before the delete starts, the page downloads a backup file:</p>
+        <p><code id="backupName"></code></p>
+        <p>Keep this file. To get the branches back, use <strong>Restore from export…</strong> with it.</p>
+      </div>
+      <label class="confirm">Type <code id="confirmTarget"></code> to confirm
+        <input id="confirmInput" type="text" autocomplete="off" spellcheck="false">
+      </label>
+    </section>
+    <section id="delRun" hidden>
+      <p id="delBackupDone" class="ok"></p>
+      <p id="delProgress" role="status" aria-live="polite"></p>
+      <progress id="delBar" aria-label="Delete progress"></progress>
+      <ul id="delList" class="result-list"></ul>
+      <p id="delSummary" class="summary"></p>
+    </section>
+    <div class="row dialog-actions">
+      <button id="delCancel" type="button">Cancel</button>
+      <button id="delGo" type="button" class="danger-solid" disabled>Delete</button>
+    </div>
+  </dialog>
+
+  <!-- Restore from an export file. -->
+  <dialog id="resDialog" aria-labelledby="resTitle">
+    <h2 id="resTitle">Restore branches</h2>
+    <p id="resSource" class="hint"></p>
+    <div id="resErrors" class="warn" hidden>
+      <strong>Some parts of the file were not read:</strong>
+      <ul id="resErrorList"></ul>
+    </div>
+    <div id="resMismatch" class="warn danger-box" hidden>
+      <p id="resMismatchText"></p>
+      <label class="inline check-line"><input id="resMismatchOk" type="checkbox"> <span id="resMismatchLabel"></span></label>
+    </div>
+    <label class="inline check-line"><input id="resAll" type="checkbox"> Select all</label>
+    <ul id="resList" class="result-list pick-list"></ul>
+    <p id="resProgress" role="status" aria-live="polite"></p>
+    <p id="resSummary" class="summary"></p>
+    <div class="row dialog-actions">
+      <button id="resCancel" type="button">Cancel</button>
+      <button id="resGo" type="button" class="primary" disabled>Restore</button>
+    </div>
+  </dialog>
+
+  <script src="lib.js"></script>
+  <script src="api.js"></script>
+  <script src="auth.js"></script>
+  <script src="report-data.js"></script>
+  <script src="report.js"></script>
+</body>
+</html>
